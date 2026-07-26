@@ -30,8 +30,9 @@ def calculate_travel_times(arrival_df):
             F.lead("sequence").over(window)
         )
         .withColumn(
-            "next_arrival",
-            F.lead("arrival_time").over(window)
+            "total_time",
+            F.unix_timestamp("next_arrival")
+            - F.unix_timestamp("arrival_time")
         )
     )
 
