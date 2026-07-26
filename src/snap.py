@@ -5,10 +5,8 @@ EARTH_RADIUS = 6371000  # meters
 
 
 def join_candidate_stops(gtfs_df, stop_df):
-    """
-    Join every GPS observation with all stops
-    belonging to the same route.
-    """
+
+    gtfs_df = gtfs_df.drop("stop_id")
 
     return gtfs_df.join(
         stop_df,
