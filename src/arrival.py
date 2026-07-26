@@ -2,45 +2,46 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 
-def extract_arrivals(snapped_df):
+def extract_arrivals(df):
     """
-    Extract the first observed arrival at each stop
-    for every trip.
+    Extract one arrival for every stop in a trip.
+
+    Output:
+        trip_id
+        route_id
+        sequence
+        stop_id
+        stop_name
+        arrival_time
     """
 
+    # Earliest vehicle observation for each stop
     window = (
         Window
         .partitionBy("trip_id", "sequence")
         .orderBy("vehicle_timestamp")
     )
 
-    arrivals = (
-        snapped_df
+    arrival_df = (
+        df
         .withColumn(
             "rank",
             F.row_number().over(window)
         )
         .filter(F.col("rank") == 1)
         .drop("rank")
+        .select(
+            "trip_id",
+            "route_id",
+            "sequence",
+            "stop_id",
+            "stop_name",
+            F.col("vehicle_timestamp").alias("arrival_time")
+        )
+        .orderBy(
+            "trip_id",
+            "sequence"
+        )
     )
 
-    arrivals = arrivals.select(
-        "trip_id",
-        "route_id",
-        "sequence",
-        "stop_id",
-        "stop_name",
-        "vehicle_timestamp"
-    )
-
-    arrivals = arrivals.withColumnRenamed(
-        "vehicle_timestamp",
-        "arrival_time"
-    )
-
-    arrivals = arrivals.orderBy(
-        "trip_id",
-        "sequence"
-    )
-
-    return arrivals
+    return arrival_df

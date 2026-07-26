@@ -4,20 +4,26 @@ from pyspark.sql import functions as F
 def clean_column(df, column_name, data_type):
     """
     Clean a column by:
-    1. Removing double quotes.
-    2. Trimming whitespace.
-    3. Converting empty strings to NULL.
-    4. Safely casting to the required datatype.
+    1. Converting to string
+    2. Removing quotes
+    3. Trimming whitespace
+    4. Replacing empty strings with NULL
+    5. Casting to target datatype
     """
 
-    cleaned = F.regexp_replace(F.col(column_name), '"', "")
+    if column_name not in df.columns:
+        return df
+
+    cleaned = (
+        F.col(column_name)
+        .cast("string")
+    )
+
+    cleaned = F.regexp_replace(cleaned, '"', "")
     cleaned = F.trim(cleaned)
     cleaned = F.when(cleaned == "", None).otherwise(cleaned)
 
-    return df.withColumn(
-        column_name,
-        cleaned.cast(data_type)
-    )
+    return df.withColumn(column_name, cleaned.cast(data_type))
 
 
 def standardize_gtfs(df):
@@ -29,7 +35,6 @@ def standardize_gtfs(df):
         "trip_id",
         "stop_id",
         "route_id",
-        "vehicle_timestamp",
         "start_date",
         "vehicle_id"
     ]
@@ -58,12 +63,22 @@ def standardize_gtfs(df):
     for col in string_columns:
         df = clean_column(df, col, "string")
 
+    # vehicle_timestamp -> Spark Timestamp
+    df = clean_column(df, "vehicle_timestamp", "long")
+
+    df = df.withColumn(
+        "vehicle_timestamp",
+        F.to_timestamp(
+            F.from_unixtime("vehicle_timestamp")
+        )
+    )
+
     return df
 
 
 def standardize_stop_sequence(df):
     """
-    Standardize static stop sequence data.
+    Standardize static stop sequence.
     """
 
     integer_columns = [
