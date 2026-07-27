@@ -31,6 +31,7 @@ def calculate_travel_times(arrival_df):
         "trip_id",
         "route_id",
         "arrival_time",
+        "distance_to_stop",
         F.col("sequence").alias("from_sequence"),
         F.col("next_sequence").alias("to_sequence"),
         "sequence_gap",
