@@ -19,7 +19,7 @@ def extract_arrivals(df):
     window = (
         Window
         .partitionBy("trip_id", "sequence")
-        .orderBy("distance_to_stop")
+        .orderBy("vehicle_timestamp")
     )
 
     arrival_df = (
