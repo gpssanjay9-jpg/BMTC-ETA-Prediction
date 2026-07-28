@@ -36,6 +36,8 @@ def extract_arrivals(df):
             "sequence",
             "stop_id",
             "stop_name",
+            "stop_lat",
+            "stop_lon",
             "distance_to_stop",
             F.col("vehicle_timestamp").alias("arrival_time")
         )
