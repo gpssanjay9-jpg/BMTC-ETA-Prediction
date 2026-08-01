@@ -1,28 +1,23 @@
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
+MAX_DISTANCE = 200  # meters
 
-def extract_arrivals(snapped_df):
+
+def extract_arrivals(df):
     """
-    Extract one arrival per stop.
+    Extract one arrival for every stop in a trip.
 
-    Selection priority:
-    1. Smallest distance_to_stop
-    2. Earliest vehicle_timestamp
-
-    Returns
-    -------
-    trip_id
-    route_id
-    sequence
-    stop_id
-    stop_name
-    stop_lat
-    stop_lon
-    distance_to_stop
-    arrival_time
+    Output:
+        trip_id
+        route_id
+        sequence
+        stop_id
+        stop_name
+        arrival_time
     """
 
+    # Pick the closest observation for each stop
     window = (
         Window
         .partitionBy("trip_id", "sequence")
@@ -33,13 +28,17 @@ def extract_arrivals(snapped_df):
     )
 
     arrival_df = (
-        snapped_df
+        df
         .withColumn(
             "rank",
             F.row_number().over(window)
         )
         .filter(F.col("rank") == 1)
         .drop("rank")
+
+        # Keep only reliable arrivals
+        .filter(F.col("distance_to_stop") <= MAX_DISTANCE)
+
         .select(
             "trip_id",
             "route_id",
