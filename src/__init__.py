@@ -9,3 +9,4 @@ from src.validation import *
 from src.split import *
 from src.train import *
 from src.evaluate import *
+from src.ingest import *
